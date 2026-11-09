@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/produto.dart';
+import '../utils/categorias.dart';
 import 'tela_cadastro.dart';
 
 class TelaPrincipal extends StatefulWidget {
@@ -32,9 +33,11 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
   }
 
   void _adicionarAoCarrinho(Produto produto) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${produto.nome} adicionado ao carrinho')),
-    );
+    ScaffoldMessenger.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text('${produto.nome} adicionado ao carrinho')),
+      );
   }
 
   @override

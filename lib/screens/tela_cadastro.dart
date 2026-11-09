@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/produto.dart';
+import '../utils/categorias.dart';
 
 class TelaCadastro extends StatefulWidget {
   const TelaCadastro({super.key});
@@ -13,7 +14,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _precoController = TextEditingController();
-  String _categoria = iconesPorCategoria.keys.first;
+  String? _categoria;
 
   @override
   void dispose() {
@@ -23,7 +24,42 @@ class _TelaCadastroState extends State<TelaCadastro> {
   }
 
   double? _lerPreco() {
-    return double.tryParse(_precoController.text.replaceAll(',', '.'));
+    return double.tryParse(_precoController.text.trim().replaceAll(',', '.'));
+  }
+
+  String? _validarNome(String? valor) {
+    final nome = valor?.trim() ?? '';
+    if (nome.isEmpty) {
+      return 'Informe o nome do produto';
+    }
+    if (nome.length < 3) {
+      return 'O nome deve ter pelo menos 3 caracteres';
+    }
+    return null;
+  }
+
+  String? _validarPreco(String? valor) {
+    if (valor == null || valor.trim().isEmpty) {
+      return 'Informe o preço';
+    }
+    final preco = _lerPreco();
+    if (preco == null) {
+      return 'Informe um preço numérico válido';
+    }
+    if (preco <= 0) {
+      return 'O preço deve ser maior que zero';
+    }
+    return null;
+  }
+
+  String? _validarCategoria(String? valor) {
+    if (valor == null) {
+      return 'Selecione uma categoria';
+    }
+    if (!iconesPorCategoria.containsKey(valor)) {
+      return 'Categoria inválida';
+    }
+    return null;
   }
 
   void _cadastrar() {
@@ -31,9 +67,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
       Navigator.pop(
         context,
         Produto(
-          nome: _nomeController.text,
+          nome: _nomeController.text.trim(),
           preco: _lerPreco()!,
-          categoria: _categoria,
+          categoria: _categoria!,
         ),
       );
     }
@@ -53,9 +89,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
               TextFormField(
                 controller: _nomeController,
                 decoration: const InputDecoration(labelText: 'Nome do produto'),
-                validator: (valor) => valor == null || valor.trim().isEmpty
-                    ? 'Informe o nome'
-                    : null,
+                validator: _validarNome,
               ),
               TextFormField(
                 controller: _precoController,
@@ -63,26 +97,43 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                validator: (_) =>
-                    _lerPreco() == null ? 'Informe um preço válido' : null,
+                validator: _validarPreco,
               ),
               const SizedBox(height: 16),
-              DropdownButton<String>(
-                value: _categoria,
-                isExpanded: true,
-                items: iconesPorCategoria.keys
-                    .map(
-                      (categoria) => DropdownMenuItem(
-                        value: categoria,
-                        child: Text(categoria),
+              FormField<String>(
+                validator: _validarCategoria,
+                builder: (campo) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DropdownButton<String>(
+                      value: _categoria,
+                      hint: const Text('Selecione a categoria'),
+                      isExpanded: true,
+                      items: iconesPorCategoria.keys
+                          .map(
+                            (categoria) => DropdownMenuItem(
+                              value: categoria,
+                              child: Text(categoria),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (valor) {
+                        setState(() {
+                          _categoria = valor;
+                        });
+                        campo.didChange(valor);
+                      },
+                    ),
+                    if (campo.hasError)
+                      Text(
+                        campo.errorText!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontSize: 12,
+                        ),
                       ),
-                    )
-                    .toList(),
-                onChanged: (valor) {
-                  setState(() {
-                    _categoria = valor!;
-                  });
-                },
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
